@@ -1,5 +1,8 @@
 document.addEventListener('DOMContentLoaded', () => {
     const recipeList = document.getElementById('recipe-list');
+    const mainSearchBar = document.querySelector('.searchbar input');
+    const mainSearchButton = document.querySelector('.searchbar button');
+
     const ingredientSelectButton = document.getElementById('ingredient-selected');
     const appareilSelectButton = document.getElementById('appareil-selected');
     const ustensileSelectButton = document.getElementById('ustensile-selected');
@@ -15,33 +18,160 @@ document.addEventListener('DOMContentLoaded', () => {
     const filterContainer = document.getElementById('filter-container');
     const recipeCount = document.getElementById('recipe-count');
 
+    const updateResults = () => {
+        const query = mainSearchBar.value.trim().toLowerCase();
+        
+        const filteredRecipes = recipes.filter(recipe => {
+            // Recherche par la barre principale
+            const matchTitle = recipe.name.toLowerCase().includes(query);
+            const matchDescription = recipe.description.toLowerCase().includes(query);
+            const matchIngredients = recipe.ingredients.some(ingredient => ingredient.ingredient.toLowerCase().includes(query));
+
+            const matchesSearchBar = matchTitle || matchDescription || matchIngredients;
+
+            // Filtres
+            const hasIngredient = selectedFilters.ingredients.length
+                ? selectedFilters.ingredients.every(selectedIngredient => recipe.ingredients.some(ingredient => ingredient.ingredient.toLowerCase().includes(selectedIngredient)))
+                : true;
+
+            const hasAppareil = selectedFilters.appareils.length
+                ? selectedFilters.appareils.every(selectedAppareil => recipe.appliance.toLowerCase() === selectedAppareil)
+                : true;
+
+            const hasUstensile = selectedFilters.ustensiles.length
+                ? selectedFilters.ustensiles.every(selectedUstensile => recipe.ustensils.some(utensil => utensil.toLowerCase().includes(selectedUstensile)))
+                : true;
+
+            // Afficher la recette seulement si elle correspond à la recherche principale ET aux filtres
+            return matchesSearchBar && hasIngredient && hasAppareil && hasUstensile;
+        });
+
+        displayRecipes(filteredRecipes);
+        populateSelects(filteredRecipes); // Mettre à jour les filtres avec les recettes filtrées
+    };
+
+    const filterRecipes = () => {
+        updateResults(); // Mettre à jour les résultats en fonction des filtres
+    };
+
+    const addFilterListeners = () => {
+        const filterInputs = [ingredientSearch, appareilSearch, ustensileSearch];
+        filterInputs.forEach(input => {
+            input.addEventListener('input', () => {
+                // Appeler la fonction de filtrage pour chaque champ de recherche
+                if (input === ingredientSearch) {
+                    filterList(ingredientSearch, ingredientOptions.querySelectorAll('ul li'));
+                } else if (input === appareilSearch) {
+                    filterList(appareilSearch, appareilOptions.querySelectorAll('ul li'));
+                } else if (input === ustensileSearch) {
+                    filterList(ustensileSearch, ustensileOptions.querySelectorAll('ul li'));
+                }
+            });
+        });
+    };
+
+    // Écouteur d'événements sur la barre de recherche principale
+    mainSearchBar.addEventListener('input', updateResults);
+
+    addFilterListeners(); // Appeler la fonction pour ajouter les écouteurs de filtre
+
+    // Ajouter une croix pour effacer le champ de recherche principale
+    const addMainSearchClearButton = () => {
+        const searchWrapper = mainSearchBar.parentElement;
+
+        // Ajouter la croix pour effacer le texte
+        const clearButton = document.createElement('span');
+        clearButton.classList.add('absolute', 'right-10', 'top-2', 'hidden', 'cursor-pointer', 'text-gray-400');
+        clearButton.innerHTML = '&times;';
+        searchWrapper.appendChild(clearButton);
+
+        // Afficher la croix quand l'utilisateur tape
+        mainSearchBar.addEventListener('input', () => {
+            if (mainSearchBar.value.length > 0) {
+                clearButton.classList.remove('hidden');
+            } else {
+                clearButton.classList.add('hidden');
+            }
+        });
+
+        // Effacer le champ de recherche quand on clique sur la croix
+        clearButton.addEventListener('click', () => {
+            mainSearchBar.value = '';
+            clearButton.classList.add('hidden');
+            displayRecipes(recipes); // Réafficher toutes les recettes
+        });
+    };
+    addMainSearchClearButton();
+    
+    
+
+    // Ajouter les icônes de loupe et croix
+    const addSearchIcons = (searchInput, clearButtonId) => {
+        const searchWrapper = searchInput.parentElement;
+
+        // Ajouter la croix pour effacer le texte
+        const clearButton = document.createElement('span');
+        clearButton.id = clearButtonId;
+        clearButton.classList.add('absolute', 'right-10', 'top-2', 'hidden', 'cursor-pointer', 'text-gray-400');
+        clearButton.innerHTML = '&times;';
+        searchWrapper.appendChild(clearButton);
+
+        // Gérer l'affichage de la croix quand l'utilisateur tape
+        searchInput.addEventListener('input', () => {
+            if (searchInput.value.length > 0) {
+                clearButton.classList.remove('hidden');
+            } else {
+                clearButton.classList.add('hidden');
+            }
+        });
+
+        // Effacer le champ de recherche quand on clique sur la croix
+        clearButton.addEventListener('click', () => {
+            searchInput.value = '';
+            clearButton.classList.add('hidden');
+            searchInput.dispatchEvent(new Event('input')); // Re-déclencher l'input pour actualiser la liste
+        });
+    };
+
+    // Appeler la fonction pour ajouter les icônes dans chaque champ de recherche
+    addSearchIcons(ingredientSearch, 'clear-search-ingredient');
+    addSearchIcons(appareilSearch, 'clear-search-appareil');
+    addSearchIcons(ustensileSearch, 'clear-search-ustensile');
+
     const selectedFilters = {
         ingredients: [],
         appareils: [],
         ustensiles: [],
     };
 
-    const createFilterTag = (type, value) => {
+    const createFilterTag = (type, value, listItem) => {
         const filterTag = document.createElement('div');
-        filterTag.className = 'bg-primary text-black px-5 py-4 rounded-xl flex items-center mt-5';
-
+        filterTag.className = 'bg-primary text-black px-5 py-3 rounded-xl flex items-center mt-5';
+    
         const filterText = document.createElement('span');
         filterText.textContent = value;
-
+    
         const closeButton = document.createElement('button');
         closeButton.className = 'ml-10';
         closeButton.innerHTML = '&times;';
-
+    
         closeButton.addEventListener('click', () => {
             selectedFilters[type] = selectedFilters[type].filter(item => item !== value.toLowerCase());
             filterContainer.removeChild(filterTag);
+            listItem.classList.remove('bg-primary'); 
+            const crossIcon = listItem.querySelector('.cross-icon');
+            if (crossIcon) {
+                crossIcon.remove(); 
+            }
             filterRecipes();
         });
-
+    
         filterTag.appendChild(filterText);
         filterTag.appendChild(closeButton);
         filterContainer.appendChild(filterTag);
     };
+
+    
 
     ingredientSelectButton.parentElement.addEventListener('click', () => {
         ingredientOptions.classList.toggle('hidden');
@@ -76,7 +206,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 recipe.ingredients.forEach(ingredient => ingredientsSet.add(ingredient.ingredient.toLowerCase()));
             }
 
-            if (recipe.appliance) { // Modification ici
+            if (recipe.appliance) {
                 appliancesSet.add(recipe.appliance.toLowerCase());
             }
 
@@ -86,52 +216,62 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         const addItemsToList = (set, container, type) => {
-            const listItems = [];
+            container.innerHTML = ''; // Réinitialiser la liste avant d'ajouter les éléments
             set.forEach(item => {
                 const li = document.createElement('li');
-                li.className = 'p-2 hover:bg-gray-100 cursor-pointer';
+                li.className = 'py-2 px-4 hover:bg-primary text-left cursor-pointer w-full';
                 li.textContent = item.charAt(0).toUpperCase() + item.slice(1);
+
+                // Vérifiez si l'élément est déjà sélectionné
+                if (selectedFilters[type].includes(item)) {
+                    li.classList.add('bg-primary');  // Ajoutez la classe jaune si déjà sélectionné
+                    li.classList.add('font-bold');
+                }
+
                 li.addEventListener('click', () => {
                     if (!selectedFilters[type].includes(item)) {
+                        // Ajouter l'élément à la sélection s'il n'est pas déjà présent
                         selectedFilters[type].push(item);
-                        createFilterTag(type, item.charAt(0).toUpperCase() + item.slice(1));
+                        li.classList.add('bg-primary'); // Ajouter la classe jaune lors de la sélection
+                
+                        // Ajouter une croix dans le menu pour montrer que l'élément est sélectionné
+                        const crossIcon = document.createElement('span');
+                        crossIcon.className = 'cross-icon';
+                        crossIcon.innerHTML = '&times;';
+                        li.appendChild(crossIcon);
+                
+                        // Créer un tag visuel (badge)
+                        createFilterTag(type, item.charAt(0).toUpperCase() + item.slice(1), li);
+                    } else {
+                        // Si l'élément est déjà sélectionné, on le retire
+                        selectedFilters[type] = selectedFilters[type].filter(selectedItem => selectedItem !== item);
+                        li.classList.remove('bg-primary'); // Retirer la classe jaune dans le menu
+                        const crossIcon = li.querySelector('.cross-icon');
+                        if (crossIcon) {
+                            crossIcon.remove(); // Retirer la croix dans le menu
+                        }
+                
+                        // Retirer également le tag associé à cet élément
+                        const tags = filterContainer.querySelectorAll('div');
+                        tags.forEach(tag => {
+                            if (tag.textContent.includes(item.charAt(0).toUpperCase() + item.slice(1))) {
+                                filterContainer.removeChild(tag); // Retirer le tag correspondant
+                            }
+                        });
                     }
-                    container.parentElement.classList.add('hidden');
+                
+                    // Refiltrer les recettes après mise à jour
                     filterRecipes();
                 });
+                
+
                 container.appendChild(li);
-                listItems.push(li);
             });
-            return listItems;
         };
 
-        const ingredientListItems = addItemsToList(ingredientsSet, ingredientOptions.querySelector('ul'), 'ingredients');
-        const appareilListItems = addItemsToList(appliancesSet, appareilOptions.querySelector('ul'), 'appareils');
-        const ustensileListItems = addItemsToList(utensilsSet, ustensileOptions.querySelector('ul'), 'ustensiles');
-
-        ingredientSearch.addEventListener('input', () => filterList(ingredientSearch, ingredientListItems));
-        appareilSearch.addEventListener('input', () => filterList(appareilSearch, appareilListItems));
-        ustensileSearch.addEventListener('input', () => filterList(ustensileSearch, ustensileListItems));
-    };
-
-    const filterRecipes = () => {
-        const filteredRecipes = recipes.filter(recipe => {
-            const hasIngredient = selectedFilters.ingredients.length
-                ? selectedFilters.ingredients.every(selectedIngredient => recipe.ingredients.some(ingredient => ingredient.ingredient.toLowerCase().includes(selectedIngredient)))
-                : true;
-
-            const hasAppareil = selectedFilters.appareils.length
-                ? selectedFilters.appareils.every(selectedAppareil => recipe.appliance.toLowerCase() === selectedAppareil)
-                : true;
-
-            const hasUstensile = selectedFilters.ustensiles.length
-                ? selectedFilters.ustensiles.every(selectedUstensile => recipe.ustensils.some(utensil => utensil.toLowerCase() === selectedUstensile))
-                : true;
-
-            return hasIngredient && hasAppareil && hasUstensile;
-        });
-
-        displayRecipes(filteredRecipes);
+        addItemsToList(ingredientsSet, ingredientOptions.querySelector('ul'), 'ingredients');
+        addItemsToList(appliancesSet, appareilOptions.querySelector('ul'), 'appareils');
+        addItemsToList(utensilsSet, ustensileOptions.querySelector('ul'), 'ustensiles');
     };
 
     const displayRecipes = (filteredRecipes) => {
