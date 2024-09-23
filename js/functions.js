@@ -38,8 +38,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     const updateResults = () => {
-        const query = mainSearchBar.value.trim().toLowerCase();
-        
+        const query = mainSearchInput.value.trim().toLowerCase();
+
+        // Vérifiez si la longueur de la requête est inférieure à 3 caractères
+        if (query.length < 3) {
+            displayRecipes(recipes); // Affiche toutes les recettes si moins de 3 caractères
+            return; // Sort de la fonction
+        }
+
         const filteredRecipes = recipes.filter(recipe => {
             // Recherche par la barre principale
             const matchTitle = recipe.name.toLowerCase().includes(query);
