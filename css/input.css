@@ -48,6 +48,7 @@ main select {
     background: white;
     border-radius: 21px;
     width: 380px;
+    height: 100%;
 }
 
 #recipe-list .recipe-card img {

@@ -2,6 +2,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const recipeList = document.getElementById('recipe-list');
     const mainSearchBar = document.querySelector('.searchbar input');
     const mainSearchButton = document.querySelector('.searchbar button');
+    const mainSearchInput = document.getElementById('main-search');
+    const clearMainSearch = document.getElementById('clear-main-search');
 
     const ingredientSelectButton = document.getElementById('ingredient-selected');
     const appareilSelectButton = document.getElementById('appareil-selected');
@@ -17,6 +19,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const filterContainer = document.getElementById('filter-container');
     const recipeCount = document.getElementById('recipe-count');
+
+
+    // Afficher ou cacher la croix en fonction de l'entrée
+    mainSearchInput.addEventListener('input', () => {
+        if (mainSearchInput.value) {
+            clearMainSearch.classList.remove('hidden'); // Affiche la croix si le champ n'est pas vide
+        } else {
+            clearMainSearch.classList.add('hidden'); // Cache la croix si le champ est vide
+        }
+    });
+
+    // Effacer le champ de recherche lorsque la croix est cliquée
+    clearMainSearch.addEventListener('click', () => {
+        mainSearchInput.value = ''; // Vide le champ de recherche
+        clearMainSearch.classList.add('hidden'); // Cache la croix
+        // Vous pouvez également appeler une fonction pour mettre à jour les résultats de recherche ici
+    });
 
     const updateResults = () => {
         const query = mainSearchBar.value.trim().toLowerCase();
@@ -152,7 +171,7 @@ document.addEventListener('DOMContentLoaded', () => {
         filterText.textContent = value;
     
         const closeButton = document.createElement('button');
-        closeButton.className = 'ml-10';
+        closeButton.className = 'ml-10 cross-icon cursor-pointer text-gray-400';
         closeButton.innerHTML = '&times;';
     
         closeButton.addEventListener('click', () => {
@@ -226,6 +245,27 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (selectedFilters[type].includes(item)) {
                     li.classList.add('bg-primary');  // Ajoutez la classe jaune si déjà sélectionné
                     li.classList.add('font-bold');
+
+                    // Ajouter une croix pour montrer que l'élément est sélectionné
+                    const crossIcon = document.createElement('span');
+                    crossIcon.className = 'cursor-pointer text-xl'; // Classe pour la croix
+                    crossIcon.innerHTML = '&times;';
+                    
+                    // Appliquer le style flex à l'élément li
+                    li.style.display = 'flex'; // Utiliser flexbox
+                    li.style.justifyContent = 'space-between'; // Espacer le contenu
+                    li.style.alignItems = 'center';
+                    li.appendChild(crossIcon); // Ajouter la croix à la fin
+
+                    // Écouteur d'événements pour retirer l'élément lorsque la croix est cliquée
+                    crossIcon.addEventListener('click', (e) => {
+                        e.stopPropagation(); // Empêche la propagation de l'événement
+                        selectedFilters[type] = selectedFilters[type].filter(selectedItem => selectedItem !== item);
+                        li.classList.remove('bg-primary'); // Retirer la classe jaune
+                        crossIcon.remove(); // Retirer la croix
+                        removeFilterTag(type, item); // Retirer le tag associé
+                        filterRecipes(); // Refiltrer les recettes après mise à jour
+                    });
                 }
 
                 li.addEventListener('click', () => {
@@ -233,37 +273,41 @@ document.addEventListener('DOMContentLoaded', () => {
                         // Ajouter l'élément à la sélection s'il n'est pas déjà présent
                         selectedFilters[type].push(item);
                         li.classList.add('bg-primary'); // Ajouter la classe jaune lors de la sélection
-                
-                        // Ajouter une croix dans le menu pour montrer que l'élément est sélectionné
+
+                        // Ajouter une croix pour montrer que l'élément est sélectionné
                         const crossIcon = document.createElement('span');
-                        crossIcon.className = 'cross-icon';
+                        crossIcon.className = 'cross-icon cursor-pointer text-gray-400 ml-2';
                         crossIcon.innerHTML = '&times;';
                         li.appendChild(crossIcon);
-                
+
+                        // Écouteur d'événements pour retirer l'élément lorsque la croix est cliquée
+                        crossIcon.addEventListener('click', (e) => {
+                            e.stopPropagation(); // Empêche la propagation de l'événement
+                            selectedFilters[type] = selectedFilters[type].filter(selectedItem => selectedItem !== item);
+                            li.classList.remove('bg-primary'); // Retirer la classe jaune
+                            crossIcon.remove(); // Retirer la croix
+                            removeFilterTag(type, item); // Retirer le tag associé
+                            filterRecipes(); // Refiltrer les recettes après mise à jour
+                        });
+
                         // Créer un tag visuel (badge)
                         createFilterTag(type, item.charAt(0).toUpperCase() + item.slice(1), li);
                     } else {
                         // Si l'élément est déjà sélectionné, on le retire
                         selectedFilters[type] = selectedFilters[type].filter(selectedItem => selectedItem !== item);
-                        li.classList.remove('bg-primary'); // Retirer la classe jaune dans le menu
+                        li.classList.remove('bg-primary'); // Retirer la classe jaune
                         const crossIcon = li.querySelector('.cross-icon');
                         if (crossIcon) {
                             crossIcon.remove(); // Retirer la croix dans le menu
                         }
-                
+
                         // Retirer également le tag associé à cet élément
-                        const tags = filterContainer.querySelectorAll('div');
-                        tags.forEach(tag => {
-                            if (tag.textContent.includes(item.charAt(0).toUpperCase() + item.slice(1))) {
-                                filterContainer.removeChild(tag); // Retirer le tag correspondant
-                            }
-                        });
+                        removeFilterTag(type, item); // Retirer le tag correspondant
                     }
-                
+
                     // Refiltrer les recettes après mise à jour
                     filterRecipes();
                 });
-                
 
                 container.appendChild(li);
             });
@@ -272,6 +316,16 @@ document.addEventListener('DOMContentLoaded', () => {
         addItemsToList(ingredientsSet, ingredientOptions.querySelector('ul'), 'ingredients');
         addItemsToList(appliancesSet, appareilOptions.querySelector('ul'), 'appareils');
         addItemsToList(utensilsSet, ustensileOptions.querySelector('ul'), 'ustensiles');
+    };
+
+    // Fonction pour retirer le tag associé
+    const removeFilterTag = (type, item) => {
+        const tags = filterContainer.querySelectorAll('div');
+        tags.forEach(tag => {
+            if (tag.textContent.includes(item.charAt(0).toUpperCase() + item.slice(1))) {
+                filterContainer.removeChild(tag); // Retirer le tag correspondant
+            }
+        });
     };
 
     const displayRecipes = (filteredRecipes) => {
