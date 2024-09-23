@@ -126,3 +126,6 @@ main input {
     float: inline-end;
 }
 
+.text-error {
+    width: max-content !important;
+}

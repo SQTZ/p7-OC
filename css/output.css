@@ -675,10 +675,6 @@ video {
   right: 1.25rem;
 }
 
-.right-64 {
-  right: 16rem;
-}
-
 .top-2 {
   top: 0.5rem;
 }
@@ -763,6 +759,14 @@ video {
   margin-left: 2.5rem;
 }
 
+.ml-2 {
+  margin-left: 0.5rem;
+}
+
+.ml-96 {
+  margin-left: 24rem;
+}
+
 .mt-2 {
   margin-top: 0.5rem;
 }
@@ -781,30 +785,6 @@ video {
 
 .mt-5 {
   margin-top: 1.25rem;
-}
-
-.ml-2 {
-  margin-left: 0.5rem;
-}
-
-.mr-2 {
-  margin-right: 0.5rem;
-}
-
-.ml-24 {
-  margin-left: 6rem;
-}
-
-.ml-56 {
-  margin-left: 14rem;
-}
-
-.ml-72 {
-  margin-left: 18rem;
-}
-
-.ml-96 {
-  margin-left: 24rem;
 }
 
 .box-border {
@@ -2199,6 +2179,11 @@ video {
   vertical-align: super;
 }
 
+.text-2xl {
+  font-size: 1.5rem;
+  line-height: 2rem;
+}
+
 .text-xl {
   font-size: 1.25rem;
   line-height: 1.75rem;
@@ -2207,16 +2192,6 @@ video {
 .text-xs {
   font-size: 0.75rem;
   line-height: 1rem;
-}
-
-.text-lg {
-  font-size: 1.125rem;
-  line-height: 1.75rem;
-}
-
-.text-2xl {
-  font-size: 1.5rem;
-  line-height: 2rem;
 }
 
 .font-bold {
@@ -2842,6 +2817,11 @@ main input {
   float: inline-end;
 }
 
+.text-error {
+  width: -moz-max-content !important;
+  width: max-content !important;
+}
+
 @media (min-width: 640px) {
   .sm\:container {
     width: 100%;
@@ -2923,4 +2903,3 @@ main input {
     }
   }
 }
-

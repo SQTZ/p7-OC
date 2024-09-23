@@ -71,8 +71,16 @@ document.addEventListener('DOMContentLoaded', () => {
             return matchesSearchBar && hasIngredient && hasAppareil && hasUstensile;
         });
 
+        // Afficher les recettes filtrées
         displayRecipes(filteredRecipes);
-        populateSelects(filteredRecipes); // Mettre à jour les filtres avec les recettes filtrées
+
+        // Vérifiez si aucune recette n'a été trouvée
+        if (filteredRecipes.length === 0) {
+            const message = `Aucune recette ne contient '${query}'. Vous pouvez chercher 'tarte aux pommes', 'poisson', etc.`;
+            recipeList.innerHTML = `<h2 class="mb-4 text-error">${message}</h2>`;
+        } else {
+            populateSelects(filteredRecipes); // Mettre à jour les filtres avec les recettes filtrées
+        }
     };
 
     const filterRecipes = () => {
