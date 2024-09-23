@@ -34,17 +34,11 @@ document.addEventListener('DOMContentLoaded', () => {
     clearMainSearch.addEventListener('click', () => {
         mainSearchInput.value = ''; // Vide le champ de recherche
         clearMainSearch.classList.add('hidden'); // Cache la croix
-        // Vous pouvez également appeler une fonction pour mettre à jour les résultats de recherche ici
+        filterRecipes(); // Met à jour les résultats en fonction des filtres
     });
 
     const updateResults = () => {
         const query = mainSearchInput.value.trim().toLowerCase();
-
-        // Vérifiez si la longueur de la requête est inférieure à 3 caractères
-        if (query.length < 3) {
-            displayRecipes(recipes); // Affiche toutes les recettes si moins de 3 caractères
-            return; // Sort de la fonction
-        }
 
         const filteredRecipes = recipes.filter(recipe => {
             // Recherche par la barre principale
@@ -73,11 +67,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Afficher les recettes filtrées
         displayRecipes(filteredRecipes);
+        populateSelects(filteredRecipes);
 
         // Vérifiez si aucune recette n'a été trouvée
         if (filteredRecipes.length === 0) {
             const message = `Aucune recette ne contient '${query}'. Vous pouvez chercher 'tarte aux pommes', 'poisson', etc.`;
-            recipeList.innerHTML = `<h2 class="mb-4 text-error">${message}</h2>`;
+            recipeList.innerHTML = `<h2 class="text-error">${message}</h2>`;
         } else {
             populateSelects(filteredRecipes); // Mettre à jour les filtres avec les recettes filtrées
         }
@@ -99,6 +94,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else if (input === ustensileSearch) {
                     filterList(ustensileSearch, ustensileOptions.querySelectorAll('ul li'));
                 }
+                filterRecipes(); // Assurez-vous que cette ligne est ici pour mettre à jour les recettes
             });
         });
     };
@@ -227,6 +223,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 item.classList.add('hidden');
             }
         });
+        
+        // Mettre à jour les recettes après le filtrage
+        filterRecipes(); // Ajouté pour s'assurer que les recettes sont mises à jour après le filtrage
     };
 
     const populateSelects = (recipes) => {
