@@ -65,9 +65,35 @@ document.addEventListener('DOMContentLoaded', () => {
             return matchesSearchBar && hasIngredient && hasAppareil && hasUstensile;
         });
 
+        // Ne pas rechercher si la longueur de la requête est inférieure à 3 caractères
+        if (query.length < 3) {
+            const filteredByFilters = recipes.filter(recipe => {
+                const hasIngredient = selectedFilters.ingredients.length
+                    ? selectedFilters.ingredients.every(selectedIngredient => recipe.ingredients.some(ingredient => ingredient.ingredient.toLowerCase().includes(selectedIngredient)))
+                    : true;
+
+                const hasAppareil = selectedFilters.appareils.length
+                    ? selectedFilters.appareils.every(selectedAppareil => recipe.appliance.toLowerCase() === selectedAppareil)
+                    : true;
+
+                const hasUstensile = selectedFilters.ustensiles.length
+                    ? selectedFilters.ustensiles.every(selectedUstensile => recipe.ustensils.some(utensil => utensil.toLowerCase().includes(selectedUstensile)))
+                    : true;
+
+                return hasIngredient && hasAppareil && hasUstensile;
+            });
+
+            displayRecipes(filteredByFilters); // Réafficher toutes les recettes filtrées par les filtres
+            recipeCount.textContent = `${filteredByFilters.length} recettes`; // Mettre à jour le compteur de recettes
+            return;
+        }
+
         // Afficher les recettes filtrées
         displayRecipes(filteredRecipes);
         populateSelects(filteredRecipes);
+
+        // Mettre à jour le compteur de recettes
+        recipeCount.textContent = `${filteredRecipes.length} recettes`;
 
         // Vérifiez si aucune recette n'a été trouvée
         if (filteredRecipes.length === 0) {
@@ -82,6 +108,17 @@ document.addEventListener('DOMContentLoaded', () => {
         updateResults(); // Mettre à jour les résultats en fonction des filtres
     };
 
+    const filterList = (searchInput, listItems) => {
+        const filterText = searchInput.value.toLowerCase();
+        listItems.forEach(item => {
+            if (item.textContent.toLowerCase().includes(filterText)) {
+                item.classList.remove('hidden'); // Affiche l'élément si le texte correspond
+            } else {
+                item.classList.add('hidden'); // Cache l'élément si le texte ne correspond pas
+            }
+        });
+    };
+
     const addFilterListeners = () => {
         const filterInputs = [ingredientSearch, appareilSearch, ustensileSearch];
         filterInputs.forEach(input => {
@@ -94,7 +131,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else if (input === ustensileSearch) {
                     filterList(ustensileSearch, ustensileOptions.querySelectorAll('ul li'));
                 }
-                filterRecipes(); // Assurez-vous que cette ligne est ici pour mettre à jour les recettes
             });
         });
     };
@@ -213,20 +249,6 @@ document.addEventListener('DOMContentLoaded', () => {
     ustensileSelectButton.parentElement.addEventListener('click', () => {
         ustensileOptions.classList.toggle('hidden');
     });
-
-    const filterList = (searchInput, listItems) => {
-        const filterText = searchInput.value.toLowerCase();
-        listItems.forEach(item => {
-            if (item.textContent.toLowerCase().includes(filterText)) {
-                item.classList.remove('hidden');
-            } else {
-                item.classList.add('hidden');
-            }
-        });
-        
-        // Mettre à jour les recettes après le filtrage
-        filterRecipes(); // Ajouté pour s'assurer que les recettes sont mises à jour après le filtrage
-    };
 
     const populateSelects = (recipes) => {
         const ingredientsSet = new Set();
