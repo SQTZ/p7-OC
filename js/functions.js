@@ -1,4 +1,6 @@
+// Attendre que le DOM soit chargé
 document.addEventListener('DOMContentLoaded', () => {
+    // Récupérer les éléments du DOM
     const recipeList = document.getElementById('recipe-list');
     const mainSearchBar = document.querySelector('.searchbar input');
     const mainSearchButton = document.querySelector('.searchbar button');
@@ -21,34 +23,37 @@ document.addEventListener('DOMContentLoaded', () => {
     const recipeCount = document.getElementById('recipe-count');
 
 
-    // Afficher ou cacher la croix en fonction de l'entrée
+    // Ajouter un écouteur d'événement pour le champ de recherche principal
     mainSearchInput.addEventListener('input', () => {
         if (mainSearchInput.value) {
-            clearMainSearch.classList.remove('hidden'); // Affiche la croix si le champ n'est pas vide
+            clearMainSearch.classList.remove('hidden');
         } else {
-            clearMainSearch.classList.add('hidden'); // Cache la croix si le champ est vide
+            clearMainSearch.classList.add('hidden');
         }
     });
 
-    // Effacer le champ de recherche lorsque la croix est cliquée
+
+    // Ajouter un écouteur d'événement pour le bouton de suppression de la recherche principale
     clearMainSearch.addEventListener('click', () => {
-        mainSearchInput.value = ''; // Vide le champ de recherche
-        clearMainSearch.classList.add('hidden'); // Cache la croix
-        filterRecipes(); // Met à jour les résultats en fonction des filtres
+        mainSearchInput.value = '';
+        clearMainSearch.classList.add('hidden');
+        filterRecipes();
     });
 
+    // Fonction pour mettre à jour les résultats de la recherche
     const updateResults = () => {
         const query = mainSearchInput.value.trim().toLowerCase();
 
+        // Filtrer les recettes en fonction de la recherche principale
         const filteredRecipes = recipes.filter(recipe => {
-            // Recherche par la barre principale
+
             const matchTitle = recipe.name.toLowerCase().includes(query);
             const matchDescription = recipe.description.toLowerCase().includes(query);
             const matchIngredients = recipe.ingredients.some(ingredient => ingredient.ingredient.toLowerCase().includes(query));
 
             const matchesSearchBar = matchTitle || matchDescription || matchIngredients;
 
-            // Filtres
+
             const hasIngredient = selectedFilters.ingredients.length
                 ? selectedFilters.ingredients.every(selectedIngredient => recipe.ingredients.some(ingredient => ingredient.ingredient.toLowerCase().includes(selectedIngredient)))
                 : true;
@@ -61,11 +66,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 ? selectedFilters.ustensiles.every(selectedUstensile => recipe.ustensils.some(utensil => utensil.toLowerCase().includes(selectedUstensile)))
                 : true;
 
-            // Afficher la recette seulement si elle correspond à la recherche principale ET aux filtres
+
             return matchesSearchBar && hasIngredient && hasAppareil && hasUstensile;
         });
 
-        // Ne pas rechercher si la longueur de la requête est inférieure à 3 caractères
+        // Si la recherche principale a moins de 3 caractères, afficher toutes les recettes
         if (query.length < 3) {
             const filteredByFilters = recipes.filter(recipe => {
                 const hasIngredient = selectedFilters.ingredients.length
@@ -83,47 +88,49 @@ document.addEventListener('DOMContentLoaded', () => {
                 return hasIngredient && hasAppareil && hasUstensile;
             });
 
-            displayRecipes(filteredByFilters); // Réafficher toutes les recettes filtrées par les filtres
-            recipeCount.textContent = `${filteredByFilters.length} recettes`; // Mettre à jour le compteur de recettes
+            displayRecipes(filteredByFilters);
+            recipeCount.textContent = `${filteredByFilters.length} recettes`;
             return;
         }
 
-        // Afficher les recettes filtrées
+
         displayRecipes(filteredRecipes);
         populateSelects(filteredRecipes);
 
-        // Mettre à jour le compteur de recettes
+
         recipeCount.textContent = `${filteredRecipes.length} recettes`;
 
-        // Vérifiez si aucune recette n'a été trouvée
+
         if (filteredRecipes.length === 0) {
             const message = `Aucune recette ne contient '${query}'. Vous pouvez chercher 'tarte aux pommes', 'poisson', etc.`;
             recipeList.innerHTML = `<h2 class="text-error">${message}</h2>`;
         } else {
-            populateSelects(filteredRecipes); // Mettre à jour les filtres avec les recettes filtrées
+            populateSelects(filteredRecipes);
         }
     };
 
+    // Fonction pour filtrer les recettes
     const filterRecipes = () => {
-        updateResults(); // Mettre à jour les résultats en fonction des filtres
+        updateResults();
     };
 
+    // Fonction pour filtrer la liste
     const filterList = (searchInput, listItems) => {
         const filterText = searchInput.value.toLowerCase();
         listItems.forEach(item => {
             if (item.textContent.toLowerCase().includes(filterText)) {
-                item.classList.remove('hidden'); // Affiche l'élément si le texte correspond
+                item.classList.remove('hidden');
             } else {
-                item.classList.add('hidden'); // Cache l'élément si le texte ne correspond pas
+                item.classList.add('hidden');
             }
         });
     };
 
+    // Ajouter des écouteurs d'événements pour les champs de recherche
     const addFilterListeners = () => {
         const filterInputs = [ingredientSearch, appareilSearch, ustensileSearch];
         filterInputs.forEach(input => {
             input.addEventListener('input', () => {
-                // Appeler la fonction de filtrage pour chaque champ de recherche
                 if (input === ingredientSearch) {
                     filterList(ingredientSearch, ingredientOptions.querySelectorAll('ul li'));
                 } else if (input === appareilSearch) {
@@ -135,22 +142,25 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    // Écouteur d'événements sur la barre de recherche principale
+
+    // Ajouter un écouteur d'événement pour la recherche principale
     mainSearchBar.addEventListener('input', updateResults);
 
-    addFilterListeners(); // Appeler la fonction pour ajouter les écouteurs de filtre
+    // Ajouter des écouteurs d'événements pour les filtres
+    addFilterListeners();
 
-    // Ajouter une croix pour effacer le champ de recherche principale
+
+    // Fonction pour ajouter un bouton de suppression à la recherche principale
     const addMainSearchClearButton = () => {
         const searchWrapper = mainSearchBar.parentElement;
 
-        // Ajouter la croix pour effacer le texte
+
         const clearButton = document.createElement('span');
         clearButton.classList.add('absolute', 'right-10', 'top-2', 'hidden', 'cursor-pointer', 'text-gray-400');
         clearButton.innerHTML = '&times;';
         searchWrapper.appendChild(clearButton);
 
-        // Afficher la croix quand l'utilisateur tape
+
         mainSearchBar.addEventListener('input', () => {
             if (mainSearchBar.value.length > 0) {
                 clearButton.classList.remove('hidden');
@@ -159,29 +169,30 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // Effacer le champ de recherche quand on clique sur la croix
+
         clearButton.addEventListener('click', () => {
             mainSearchBar.value = '';
             clearButton.classList.add('hidden');
-            displayRecipes(recipes); // Réafficher toutes les recettes
+            displayRecipes(recipes);
         });
     };
     addMainSearchClearButton();
-    
-    
 
-    // Ajouter les icônes de loupe et croix
+
+
+
+    // Fonction pour ajouter des icônes de recherche
     const addSearchIcons = (searchInput, clearButtonId) => {
         const searchWrapper = searchInput.parentElement;
 
-        // Ajouter la croix pour effacer le texte
+
         const clearButton = document.createElement('span');
         clearButton.id = clearButtonId;
         clearButton.classList.add('absolute', 'right-10', 'top-2', 'hidden', 'cursor-pointer', 'text-gray-400');
         clearButton.innerHTML = '&times;';
         searchWrapper.appendChild(clearButton);
 
-        // Gérer l'affichage de la croix quand l'utilisateur tape
+
         searchInput.addEventListener('input', () => {
             if (searchInput.value.length > 0) {
                 clearButton.classList.remove('hidden');
@@ -190,54 +201,58 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // Effacer le champ de recherche quand on clique sur la croix
+
         clearButton.addEventListener('click', () => {
             searchInput.value = '';
             clearButton.classList.add('hidden');
-            searchInput.dispatchEvent(new Event('input')); // Re-déclencher l'input pour actualiser la liste
+            searchInput.dispatchEvent(new Event('input'));
         });
     };
 
-    // Appeler la fonction pour ajouter les icônes dans chaque champ de recherche
+
+    // Ajouter des icônes de recherche aux champs de recherche
     addSearchIcons(ingredientSearch, 'clear-search-ingredient');
     addSearchIcons(appareilSearch, 'clear-search-appareil');
     addSearchIcons(ustensileSearch, 'clear-search-ustensile');
 
+    // Initialiser les filtres
     const selectedFilters = {
         ingredients: [],
         appareils: [],
         ustensiles: [],
     };
 
+    // Fonction pour créer un tag de filtre
     const createFilterTag = (type, value, listItem) => {
         const filterTag = document.createElement('div');
         filterTag.className = 'bg-primary text-black px-5 py-3 rounded-xl flex items-center mt-5';
-    
+
         const filterText = document.createElement('span');
         filterText.textContent = value;
-    
+
         const closeButton = document.createElement('button');
         closeButton.className = 'ml-10 cross-icon cursor-pointer text-gray-400';
         closeButton.innerHTML = '&times;';
-    
+
         closeButton.addEventListener('click', () => {
             selectedFilters[type] = selectedFilters[type].filter(item => item !== value.toLowerCase());
             filterContainer.removeChild(filterTag);
-            listItem.classList.remove('bg-primary'); 
+            listItem.classList.remove('bg-primary');
             const crossIcon = listItem.querySelector('.cross-icon');
             if (crossIcon) {
-                crossIcon.remove(); 
+                crossIcon.remove();
             }
             filterRecipes();
         });
-    
+
         filterTag.appendChild(filterText);
         filterTag.appendChild(closeButton);
         filterContainer.appendChild(filterTag);
     };
 
-    
 
+
+    // Ajouter des écouteurs d'événements pour les boutons de sélection
     ingredientSelectButton.parentElement.addEventListener('click', () => {
         ingredientOptions.classList.toggle('hidden');
     });
@@ -250,6 +265,7 @@ document.addEventListener('DOMContentLoaded', () => {
         ustensileOptions.classList.toggle('hidden');
     });
 
+    // Fonction pour peupler les sélecteurs
     const populateSelects = (recipes) => {
         const ingredientsSet = new Set();
         const appliancesSet = new Set();
@@ -270,77 +286,75 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         const addItemsToList = (set, container, type) => {
-            container.innerHTML = ''; // Réinitialiser la liste avant d'ajouter les éléments
+            container.innerHTML = '';
             set.forEach(item => {
                 const li = document.createElement('li');
                 li.className = 'py-2 px-4 hover:bg-primary text-left cursor-pointer w-full';
                 li.textContent = item.charAt(0).toUpperCase() + item.slice(1);
 
-                // Vérifiez si l'élément est déjà sélectionné
+
                 if (selectedFilters[type].includes(item)) {
-                    li.classList.add('bg-primary');  // Ajoutez la classe jaune si déjà sélectionné
+                    li.classList.add('bg-primary');
                     li.classList.add('font-bold');
 
-                    // Ajouter une croix pour montrer que l'élément est sélectionné
-                    const crossIcon = document.createElement('span');
-                    crossIcon.className = 'cursor-pointer text-xl'; // Classe pour la croix
-                    crossIcon.innerHTML = '&times;';
-                    
-                    // Appliquer le style flex à l'élément li
-                    li.style.display = 'flex'; // Utiliser flexbox
-                    li.style.justifyContent = 'space-between'; // Espacer le contenu
-                    li.style.alignItems = 'center';
-                    li.appendChild(crossIcon); // Ajouter la croix à la fin
 
-                    // Écouteur d'événements pour retirer l'élément lorsque la croix est cliquée
+                    const crossIcon = document.createElement('span');
+                    crossIcon.className = 'cursor-pointer text-xl';
+                    crossIcon.innerHTML = '&times;';
+
+
+                    li.style.display = 'flex';
+                    li.style.justifyContent = 'space-between';
+                    li.style.alignItems = 'center';
+                    li.appendChild(crossIcon);
+
                     crossIcon.addEventListener('click', (e) => {
-                        e.stopPropagation(); // Empêche la propagation de l'événement
+                        e.stopPropagation();
                         selectedFilters[type] = selectedFilters[type].filter(selectedItem => selectedItem !== item);
-                        li.classList.remove('bg-primary'); // Retirer la classe jaune
-                        crossIcon.remove(); // Retirer la croix
-                        removeFilterTag(type, item); // Retirer le tag associé
-                        filterRecipes(); // Refiltrer les recettes après mise à jour
+                        li.classList.remove('bg-primary');
+                        crossIcon.remove();
+                        removeFilterTag(type, item);
+                        filterRecipes();
                     });
                 }
 
                 li.addEventListener('click', () => {
                     if (!selectedFilters[type].includes(item)) {
-                        // Ajouter l'élément à la sélection s'il n'est pas déjà présent
-                        selectedFilters[type].push(item);
-                        li.classList.add('bg-primary'); // Ajouter la classe jaune lors de la sélection
 
-                        // Ajouter une croix pour montrer que l'élément est sélectionné
+                        selectedFilters[type].push(item);
+                        li.classList.add('bg-primary');
+
                         const crossIcon = document.createElement('span');
                         crossIcon.className = 'cross-icon cursor-pointer text-gray-400 ml-2';
                         crossIcon.innerHTML = '&times;';
                         li.appendChild(crossIcon);
 
-                        // Écouteur d'événements pour retirer l'élément lorsque la croix est cliquée
+
                         crossIcon.addEventListener('click', (e) => {
-                            e.stopPropagation(); // Empêche la propagation de l'événement
+                            e.stopPropagation();
                             selectedFilters[type] = selectedFilters[type].filter(selectedItem => selectedItem !== item);
-                            li.classList.remove('bg-primary'); // Retirer la classe jaune
-                            crossIcon.remove(); // Retirer la croix
-                            removeFilterTag(type, item); // Retirer le tag associé
-                            filterRecipes(); // Refiltrer les recettes après mise à jour
+                            li.classList.remove('bg-primary');
+                            crossIcon.remove();
+                            removeFilterTag(type, item);
+                            filterRecipes();
                         });
 
-                        // Créer un tag visuel (badge)
+
                         createFilterTag(type, item.charAt(0).toUpperCase() + item.slice(1), li);
                     } else {
-                        // Si l'élément est déjà sélectionné, on le retire
+
                         selectedFilters[type] = selectedFilters[type].filter(selectedItem => selectedItem !== item);
-                        li.classList.remove('bg-primary'); // Retirer la classe jaune
+                        li.classList.remove('bg-primary');
                         const crossIcon = li.querySelector('.cross-icon');
                         if (crossIcon) {
-                            crossIcon.remove(); // Retirer la croix dans le menu
+                            crossIcon.remove();
                         }
 
-                        // Retirer également le tag associé à cet élément
-                        removeFilterTag(type, item); // Retirer le tag correspondant
+
+                        removeFilterTag(type, item);
                     }
 
-                    // Refiltrer les recettes après mise à jour
+
                     filterRecipes();
                 });
 
@@ -353,16 +367,18 @@ document.addEventListener('DOMContentLoaded', () => {
         addItemsToList(utensilsSet, ustensileOptions.querySelector('ul'), 'ustensiles');
     };
 
-    // Fonction pour retirer le tag associé
+
+    // Fonction pour supprimer un tag de filtre
     const removeFilterTag = (type, item) => {
         const tags = filterContainer.querySelectorAll('div');
         tags.forEach(tag => {
             if (tag.textContent.includes(item.charAt(0).toUpperCase() + item.slice(1))) {
-                filterContainer.removeChild(tag); // Retirer le tag correspondant
+                filterContainer.removeChild(tag);
             }
         });
     };
 
+    // Fonction pour afficher les recettes
     const displayRecipes = (filteredRecipes) => {
         recipeList.innerHTML = '';
 
@@ -404,6 +420,7 @@ document.addEventListener('DOMContentLoaded', () => {
         recipeCount.textContent = `${filteredRecipes.length} recettes`;
     };
 
+    // Initialiser les sélecteurs et afficher toutes les recettes
     populateSelects(recipes);
     displayRecipes(recipes);
 });
