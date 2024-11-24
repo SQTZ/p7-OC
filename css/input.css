@@ -48,6 +48,7 @@ main select {
     background: white;
     border-radius: 21px;
     width: 380px;
+    height: 100%;
 }
 
 #recipe-list .recipe-card img {
@@ -96,3 +97,35 @@ main select {
     font-size: 14px;
 }
 
+.bloc-list {
+    width: min-content;
+}
+
+ul {
+    font-family: "Manrope", sans-serif;
+    font-size: 14px;
+    -ms-overflow-style: none;  /* Internet Explorer 10+ */
+    scrollbar-width: none; /* Firefox */
+}
+
+ul::-webkit-scrollbar {
+    width: 0px;
+    background: transparent; /* Optionnel, pour retirer tout fond de scrollbar */
+}
+
+main input {
+    font-family: "Manrope", sans-serif;
+    font-size: 14px;
+}
+
+.cross-icon {
+    background: #1B1B1B;
+    color: #FFD15B;
+    padding: 0 6px;
+    border-radius: 100%;
+    float: inline-end;
+}
+
+.text-error {
+    width: max-content !important;
+}
