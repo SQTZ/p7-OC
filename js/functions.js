@@ -44,7 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Fonction pour remplir les listes de filtres
     const populateFilters = (recipes) => {
-        const ingredients = new Set();
+        const ingredients = new Set(); // Pour stocker que les éléments uniques
         const appareils = new Set();
         const ustensiles = new Set();
 
@@ -196,61 +196,62 @@ document.addEventListener('DOMContentLoaded', () => {
         const query = mainSearchBar.value.trim().toLowerCase();
         let filteredRecipes = [];
 
-        // Copier toutes les recettes
+        // Copier les recettes une seule fois
         for (let i = 0; i < recipes.length; i++) {
-            filteredRecipes.push(recipes[i]);
+            filteredRecipes[i] = recipes[i];
         }
 
         // Filtre par recherche principale (si plus de 3 caractères)
         if (query.length >= 3) {
             const tempRecipes = [];
+            let tempIndex = 0;
+            
             for (let i = 0; i < filteredRecipes.length; i++) {
                 const recipe = filteredRecipes[i];
                 const matchTitle = recipe.name.toLowerCase().includes(query);
                 const matchDescription = recipe.description.toLowerCase().includes(query);
                 let matchIngredients = false;
 
-                for (let j = 0; j < recipe.ingredients.length; j++) {
-                    if (recipe.ingredients[j].ingredient.toLowerCase().includes(query)) {
+                // Optimisation de la recherche d'ingrédients
+                const ingredients = recipe.ingredients;
+                for (let j = 0; j < ingredients.length && !matchIngredients; j++) {
+                    if (ingredients[j].ingredient.toLowerCase().includes(query)) {
                         matchIngredients = true;
-                        break;
                     }
                 }
 
                 if (matchTitle || matchDescription || matchIngredients) {
-                    tempRecipes.push(recipe);
+                    tempRecipes[tempIndex++] = recipe;
                 }
             }
             filteredRecipes = tempRecipes;
         }
 
-        // Appliquer les filtres sélectionnés
+        // Optimisation des filtres sélectionnés
         if (selectedFilters.ingredients.length > 0) {
             const tempRecipes = [];
-            for (let i = 0; i < filteredRecipes.length; i++) {
+            let tempIndex = 0;
+
+            recipeLoop: for (let i = 0; i < filteredRecipes.length; i++) {
                 const recipe = filteredRecipes[i];
-                let hasAllIngredients = true;
+                const recipeIngredients = recipe.ingredients;
 
                 for (let j = 0; j < selectedFilters.ingredients.length; j++) {
                     const selectedIng = selectedFilters.ingredients[j];
-                    let hasIngredient = false;
+                    let found = false;
 
-                    for (let k = 0; k < recipe.ingredients.length; k++) {
-                        if (recipe.ingredients[k].ingredient.toLowerCase().includes(selectedIng)) {
-                            hasIngredient = true;
+                    for (let k = 0; k < recipeIngredients.length; k++) {
+                        if (recipeIngredients[k].ingredient.toLowerCase().includes(selectedIng)) {
+                            found = true;
                             break;
                         }
                     }
 
-                    if (!hasIngredient) {
-                        hasAllIngredients = false;
-                        break;
+                    if (!found) {
+                        continue recipeLoop;
                     }
                 }
-
-                if (hasAllIngredients) {
-                    tempRecipes.push(recipe);
-                }
+                tempRecipes[tempIndex++] = recipe;
             }
             filteredRecipes = tempRecipes;
         }
@@ -368,14 +369,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Fonction d'affichage des recettes
     const displayRecipes = (recipesToDisplay) => {
-        recipeList.innerHTML = '';
+        let html = '';
         
         for (let i = 0; i < recipesToDisplay.length; i++) {
             const recipe = recipesToDisplay[i];
             let ingredientsHTML = '<div class="grid grid-cols-2 gap-2 mt-4 ingredients">';
             
-            for (let j = 0; j < recipe.ingredients.length; j++) {
-                const ingredient = recipe.ingredients[j];
+            const ingredients = recipe.ingredients;
+            for (let j = 0; j < ingredients.length; j++) {
+                const ingredient = ingredients[j];
                 ingredientsHTML += `
                     <div class="mb-2">
                         <p class="">${ingredient.ingredient}</p>
@@ -385,10 +387,12 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             ingredientsHTML += '</div>';
 
-            const recipeCard = document.createElement('div');
-            recipeCard.innerHTML = `
+            html += `
                 <div class="bg-white rounded-2xl shadow-lg overflow-hidden relative recipe-card">
-                    <img src="./assets/pictures/${recipe.image}" alt="${recipe.name}" class="w-full h-64 object-cover">
+                    <img src="./assets/pictures/${recipe.image}" 
+                         alt="${recipe.name}" 
+                         class="w-full h-64 object-cover"
+                         loading="lazy">
                     <div class="p-6">
                         <h3 class="text-xl font-semibold">${recipe.name}</h3>
                         <h4 class="text-subtitle font-bold tracking-wide">Recette</h4>
@@ -399,9 +403,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     <p class="bg-primary text-xs font-light py-1 px-3 rounded-full absolute top-4 right-4">${recipe.time}min</p>
                 </div>
             `;
-            recipeList.appendChild(recipeCard);
         }
 
+        recipeList.innerHTML = html;
         recipeCount.textContent = `${recipesToDisplay.length} recettes`;
     };
 
