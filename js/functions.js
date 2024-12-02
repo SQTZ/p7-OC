@@ -43,70 +43,59 @@ document.addEventListener('DOMContentLoaded', () => {
     // Fonction pour mettre à jour les résultats de la recherche
     const updateResults = () => {
         const query = mainSearchInput.value.trim().toLowerCase();
+        
+        // Filtrer d'abord par la recherche principale
+        let filteredRecipes = query.length < 3 
+            ? [...recipes]
+            : recipes.filter(recipe => 
+                recipe.name.toLowerCase().includes(query) ||
+                recipe.description.toLowerCase().includes(query) ||
+                recipe.ingredients.some(ingredient => 
+                    ingredient.ingredient.toLowerCase().includes(query)
+                )
+            );
 
-        // Filtrer les recettes en fonction de la recherche principale
-        const filteredRecipes = recipes.filter(recipe => {
+        // Ensuite appliquer les filtres sélectionnés
+        if (selectedFilters.ingredients.length > 0 || 
+            selectedFilters.appareils.length > 0 || 
+            selectedFilters.ustensiles.length > 0) {
+            
+            filteredRecipes = filteredRecipes.filter(recipe => {
+                const hasIngredient = selectedFilters.ingredients.length === 0 || 
+                    selectedFilters.ingredients.every(selectedIngredient => 
+                        recipe.ingredients.some(ingredient => 
+                            ingredient.ingredient.toLowerCase().includes(selectedIngredient)
+                        )
+                    );
 
-            const matchTitle = recipe.name.toLowerCase().includes(query);
-            const matchDescription = recipe.description.toLowerCase().includes(query);
-            const matchIngredients = recipe.ingredients.some(ingredient => ingredient.ingredient.toLowerCase().includes(query));
+                const hasAppareil = selectedFilters.appareils.length === 0 || 
+                    selectedFilters.appareils.every(selectedAppareil => 
+                        recipe.appliance.toLowerCase() === selectedAppareil
+                    );
 
-            const matchesSearchBar = matchTitle || matchDescription || matchIngredients;
-
-
-            const hasIngredient = selectedFilters.ingredients.length
-                ? selectedFilters.ingredients.every(selectedIngredient => recipe.ingredients.some(ingredient => ingredient.ingredient.toLowerCase().includes(selectedIngredient)))
-                : true;
-
-            const hasAppareil = selectedFilters.appareils.length
-                ? selectedFilters.appareils.every(selectedAppareil => recipe.appliance.toLowerCase() === selectedAppareil)
-                : true;
-
-            const hasUstensile = selectedFilters.ustensiles.length
-                ? selectedFilters.ustensiles.every(selectedUstensile => recipe.ustensils.some(utensil => utensil.toLowerCase().includes(selectedUstensile)))
-                : true;
-
-
-            return matchesSearchBar && hasIngredient && hasAppareil && hasUstensile;
-        });
-
-        // Si la recherche principale a moins de 3 caractères, afficher toutes les recettes
-        if (query.length < 3) {
-            const filteredByFilters = recipes.filter(recipe => {
-                const hasIngredient = selectedFilters.ingredients.length
-                    ? selectedFilters.ingredients.every(selectedIngredient => recipe.ingredients.some(ingredient => ingredient.ingredient.toLowerCase().includes(selectedIngredient)))
-                    : true;
-
-                const hasAppareil = selectedFilters.appareils.length
-                    ? selectedFilters.appareils.every(selectedAppareil => recipe.appliance.toLowerCase() === selectedAppareil)
-                    : true;
-
-                const hasUstensile = selectedFilters.ustensiles.length
-                    ? selectedFilters.ustensiles.every(selectedUstensile => recipe.ustensils.some(utensil => utensil.toLowerCase().includes(selectedUstensile)))
-                    : true;
+                const hasUstensile = selectedFilters.ustensiles.length === 0 || 
+                    selectedFilters.ustensiles.every(selectedUstensile => 
+                        recipe.ustensils.some(utensil => 
+                            utensil.toLowerCase().includes(selectedUstensile)
+                        )
+                    );
 
                 return hasIngredient && hasAppareil && hasUstensile;
             });
-
-            displayRecipes(filteredByFilters);
-            recipeCount.textContent = `${filteredByFilters.length} recettes`;
-            return;
         }
 
-
+        // Mettre à jour l'affichage
         displayRecipes(filteredRecipes);
-        populateSelects(filteredRecipes);
-
-
         recipeCount.textContent = `${filteredRecipes.length} recettes`;
 
-
-        if (filteredRecipes.length === 0) {
-            const message = `Aucune recette ne contient '${query}'. Vous pouvez chercher 'tarte aux pommes', 'poisson', etc.`;
-            recipeList.innerHTML = `<h2 class="text-error">${message}</h2>`;
-        } else {
-            populateSelects(filteredRecipes);
+        // Mettre à jour les listes de filtres avec toutes les options disponibles
+        if (query.length >= 3) {
+            if (filteredRecipes.length === 0) {
+                recipeList.innerHTML = `<h2 class="text-error">Aucune recette ne contient '${query}'. Vous pouvez chercher 'tarte aux pommes', 'poisson', etc.</h2>`;
+            }
         }
+        // Toujours mettre à jour les sélecteurs avec les recettes filtrées
+        populateSelects(filteredRecipes);
     };
 
     // Fonction pour filtrer les recettes
@@ -380,43 +369,39 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Fonction pour afficher les recettes
     const displayRecipes = (filteredRecipes) => {
-        recipeList.innerHTML = '';
+        const fragment = document.createDocumentFragment();
+        
+        filteredRecipes.forEach(recipe => {
+            const recipeCard = document.createElement('div');
+            const ingredientsHTML = Array.isArray(recipe.ingredients) 
+                ? recipe.ingredients.map(ingredient => `
+                    <div class="mb-2">
+                        <p>${ingredient.ingredient}</p>
+                        <span class="text-subtitle">${ingredient.quantity} ${ingredient.unit || ''}</span>
+                    </div>
+                `).join('')
+                : '';
 
-        const recipeCards = filteredRecipes.map(recipe => {
-            let ingredientsHTML = '<div class="grid grid-cols-2 gap-2 mt-4 ingredients">';
-            if (Array.isArray(recipe.ingredients)) {
-                recipe.ingredients.forEach(ingredient => {
-                    ingredientsHTML += `
-                        <div class="mb-2">
-                            <p class="">${ingredient.ingredient}</p>
-                            <span class="text-subtitle">${ingredient.quantity} ${ingredient.unit || ''}</span>
-                        </div>
-                    `;
-                });
-            }
-            ingredientsHTML += '</div>';
-
-            return `
+            recipeCard.innerHTML = `
                 <div class="bg-white rounded-2xl shadow-lg overflow-hidden relative recipe-card">
-                    <img src="./assets/pictures/${recipe.image}" alt="${recipe.name}" class="w-full h-64 object-cover">
+                    <img loading="lazy" src="./assets/pictures/${recipe.image}" alt="${recipe.name}" class="w-full h-64 object-cover">
                     <div class="p-6">
                         <h3 class="text-xl font-semibold">${recipe.name}</h3>
                         <h4 class="text-subtitle font-bold tracking-wide">Recette</h4>
                         <p class="desc">${recipe.description}</p>
                         <h4 class="text-subtitle font-bold tracking-wide">Ingrédients</h4>
-                        ${ingredientsHTML}
+                        <div class="grid grid-cols-2 gap-2 mt-4 ingredients">
+                            ${ingredientsHTML}
+                        </div>
                     </div>
                     <p class="bg-primary text-xs font-light py-1 px-3 rounded-full absolute top-4 right-4">${recipe.time}min</p>
                 </div>
             `;
+            fragment.appendChild(recipeCard);
         });
 
-        recipeCards.forEach(recipeCardHTML => {
-            const recipeCardElement = document.createElement('div');
-            recipeCardElement.innerHTML = recipeCardHTML;
-            recipeList.appendChild(recipeCardElement);
-        });
-
+        recipeList.innerHTML = '';
+        recipeList.appendChild(fragment);
         recipeCount.textContent = `${filteredRecipes.length} recettes`;
     };
 
